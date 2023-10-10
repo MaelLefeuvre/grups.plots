@@ -4,6 +4,8 @@
 #' @import stringr
 #' @import shinycssloaders
 #' @import bslib
+#' @import shinyBS
+#' @import prompter
 #' @import progressr
 #' @importFrom dplyr %>%
 #' @export
@@ -15,6 +17,10 @@ app <- function(
   threads      = 1,
   ...
 ) {
+
+
+
+  tooltips <- grups.plots::tooltips()
 
   progressr::handlers(global = TRUE)
 
@@ -29,6 +35,13 @@ app <- function(
     path = data_dir,
     full.names = TRUE,
     pattern = "\\.result$"
+  )
+
+  # ---- Search for .prob file.
+  prob_file <- list.files(
+    path = data_dir,
+    full.names = TRUE,
+    pattern = "\\.probs$"
   )
 
   # ---- 2. Search for .pwd file(s)
@@ -98,6 +111,11 @@ app <- function(
     ),
 
     shiny::need(
+      length(prob_file) <= 1,
+      "[ERROR]: Only one `.probs` file must exist within `data_dir`. Exiting."
+    ),
+
+    shiny::need(
       length(config_files) >= 1,
       "[ERROR]: At least one `.yaml` configuration file must exist within \
        `data_dir`. Exiting"
@@ -106,6 +124,8 @@ app <- function(
 
   thematic::thematic_shiny()
   ui <- shiny::fluidPage(
+
+    prompter::use_prompt(),
 
   # ---- Dimensions of the current window
     tags$head(tags$script('
@@ -120,7 +140,13 @@ app <- function(
                         dimension[1] = window.innerHeight;
                         Shiny.onInputChange("dimension", dimension);
                         });
-                        ')),
+                        '),
+      tags$style(HTML("
+        [class*=hint--][aria-label]:after {
+          white-space: pre;
+        }
+      "))
+    ),
 
 
     theme = bslib::bs_theme(bootswatch = "darkly", version = 5) %>% 
@@ -141,11 +167,23 @@ app <- function(
                   shiny::checkboxInput("norm_request",
                     label = "Normalize"
                   )
+                ) %>% prompter::add_prompt(
+                  message = tooltips[["norm_request"]],
+                  position = "right",
+                  rounded  = TRUE,
+                  bounce   = TRUE,
+                  type     = "info"
                 ),
                 shiny::column(6,
                   shiny::checkboxInput("hide_self_comparisons",
                     label = "Hide self-comparisons"
-                  )
+                  ) %>% prompter::add_prompt(
+                  message = tooltips[["hide_self_comparisons"]],
+                  position = "right",
+                  rounded  = TRUE,
+                  bounce   = TRUE,
+                  type     = "info"
+                )
                 )
               ),
 
@@ -160,6 +198,12 @@ app <- function(
                     choiceValues = c("Pairwise", "Self", "Value"),
                     selected = "Pairwise",
                     width = "100%"
+                  ) %>% prompter::add_prompt(
+                    message  = tooltips[["norm_method"]],
+                    position = "right",
+                    rounded  = TRUE,
+                    bounce   = TRUE,
+                    type     = "info"
                   )
                 ),
                 shiny::column(6,
@@ -169,6 +213,12 @@ app <- function(
                       label    = "Normalization metric",
                       choices  = c("Median", "Mean", "Min", "Max"),
                       selected = "Median"
+                    ) %>% prompter::add_prompt(
+                      message = tooltips[["norm_metric"]],
+                      position = "right",
+                      rounded  = TRUE,
+                      bounce   = TRUE,
+                      type     = "info"
                     )
                   ),
                   shiny::conditionalPanel(
@@ -186,18 +236,30 @@ app <- function(
               shiny::fluidRow(
                 shiny::column(6,
                   shiny::numericInput("min_overlap",
-                    label = "Minimum SNP overlap treshold",
+                    label = "Minimum SNP overlap threshold",
                     value = 0,
                     min   = 0,
                     max   = .Machine$integer.max,
                     step  = 10000
-                  ),
+                  ) %>% prompter::add_prompt(
+                    message = tooltips[["min_overlap"]],
+                    position = "right",
+                    rounded  = TRUE,
+                    bounce   = TRUE,
+                    type     = "info"
+                  )
                 ),
                 shiny::column(6,
                   shiny::radioButtons("norm_avg_type",
                     label = "Type",
                     choiceNames = c("Raw Average PWD", "Corrected Average PWD"),
                     choiceValues = c("Raw", "Corr"),
+                  ) %>% prompter::add_prompt(
+                    message = tooltips[["norm_avg_type"]],
+                    position = "right",
+                    rounded  = TRUE,
+                    bounce   = TRUE,
+                    type     = "info"
                   )
                 )
               )
@@ -206,7 +268,7 @@ app <- function(
               shiny::tabsetPanel(
                 shiny::tabPanel("Plot",
                   plotly::plotlyOutput("pwd_barplot") %>%
-                    shinycssloaders::withSpinner()
+                    shinycssloaders::withSpinner(),
                 ),
                 shiny::tabPanel("Raw data",
                    DT::dataTableOutput("pwd_dataframe") %>%
@@ -228,17 +290,31 @@ app <- function(
                 rownames(blk_files)
               ),
               shiny::sliderInput("block_width",
-                "Block-width",
+                "Sliding window width (Megabases)",
                 value = 20,
                 min   = 2,
                 max   = 50
-              ),
+              ), #%>% prompter::add_prompt(
+                #message = tooltips[["block_width"]],
+                #position = "right",
+                #rounded  = TRUE,
+                #bounce   = TRUE,
+                #type     = "info"
+              #),
+              shiny::hr(),
               shiny::sliderInput("block_step",
-                "Sliding window step",
+                "Sliding window step (Megabases)",
                 value = 1,
                 min = 1,
                 max = 50
-              ),
+              ), #%>% prompter::add_prompt(
+                #message = tooltips[["min_overlap"]],
+                #position = "right",
+                #rounded  = TRUE,
+                #bounce   = TRUE,
+                #type     = "info"
+              #),
+              shiny::hr(),
               shiny::uiOutput("chromosome_subset_checkboxgroup") %>%
                 shinycssloaders::withSpinner()
             ),
@@ -258,13 +334,19 @@ app <- function(
         )
       ),
 
-      # ----- TEST: Render kinship matrix
+      # ----- Render kinship matrix
       shiny::tabPanel("Kinship Matrix",
         shiny::fluidPage(
           shiny::sidebarLayout(
             shiny::sidebarPanel(
                 shiny::uiOutput("kinship_matrix_order") %>%
                   shinycssloaders::withSpinner()
+            ) %>% prompter::add_prompt(
+              message = tooltips[["kinship_matrix_ordered_labels"]],
+              position = "right",
+              rounded  = TRUE,
+              bounce   = TRUE,
+              type     = "info"
             ),
             shiny::mainPanel(
               plotly::plotlyOutput("kinship_matrix") %>%
@@ -286,11 +368,17 @@ app <- function(
               shiny::uiOutput("simulation_labels_checkboxgroup") %>%
                 shinycssloaders::withSpinner(),
               shiny::numericInput("ks_alpha",
-                "Kolmogorov-Smirnov alpha treshold",
+                label = "Kolmogorov-Smirnov alpha treshold",
                 min   = 0,
                 max   = 1,
                 step  = 0.01,
                 value = 0.05
+              ) %>% prompter::add_prompt(
+                message = tooltips[["ks_alpha"]],
+                position = "right",
+                rounded  = TRUE,
+                bounce   = TRUE,
+                type     = "info"
               )
             ),
             shiny::mainPanel(
@@ -298,22 +386,29 @@ app <- function(
                 shiny::tabPanel("Violin Plots",
                   plotly::plotlyOutput("sims_violinplot") %>%
                     shinycssloaders::withSpinner(),
+                  shiny::hr(),
+                  shiny::h5(strong("Assigned SVM probabilities")),
                   DT::dataTableOutput("assigned_svm_probabilities") %>%
                     shinycssloaders::withSpinner(),
+                  shiny::hr(),
+                  shiny::h5(strong("Normality of simulated distributions (Kolmogorov-Smirnov test)")),
                   DT::dataTableOutput("ks_normality_test") %>%
                     shinycssloaders::withSpinner(),
                   shiny::hr(),
                   shiny::fluidRow(
                     shiny::column(6,
+                      shiny::h5(strong("Matrix of Bhattacharya coefficients")),
                       plotly::plotlyOutput("bc_matrix_plot") %>%
                         shinycssloaders::withSpinner()
                     ),
                     shiny::column(6,
+                      shiny::h5(strong("Matrix of Odds Ratio ")),
                       plotly::plotlyOutput("plot_or_matrix") %>%
                         shinycssloaders::withSpinner()
                     )
                   ),
                   shiny::hr(),
+                  shiny::h5(strong("Log(Odds ratio) of the most likely relationship")),
                   plotly::plotlyOutput("OR_confidence")
                 ),
                 shiny::tabPanel("Raw data",
@@ -336,11 +431,21 @@ app <- function(
       shiny::tabPanel("Configuration",
         shiny::verbatimTextOutput("config_file") %>%
           shinycssloaders::withSpinner()
-      )
+      ),
+
+
+      # ---- Tooltips
+      #shinyBS::bsTooltip(id = "norm_request", title = "This is an input",
+      #      placement = "right", trigger = "hover")
+    
     )
+
   )
 
   server <- function(input, output, session) {
+
+    # ---- Add tooltips
+    shinyBS::addPopover(session, id = "norm_request", title= "Example toolTip", content="hello", trigger = "hover")
 
     # 0 ---- Update block slider inputs
     shiny::observe({
@@ -363,15 +468,19 @@ app <- function(
     # 0 ---- Fit SVMOPs and compute probabilities.
     prog_msg <-  "Fitting SVM against simulations. This may take a while..."
     load_svm_probs <- shiny::reactive(
-      progressr::withProgressShiny(message = prog_msg, value = 0, {
-        progressor <- progressr::progressor(along = seq_along(sim_files$path))
-        grups.plots::get_svmop_probs(
-          load_results_file(),
-          sim_files,
-          progressor = progressor,
-          threads = threads
-        )
-      })
+      if (length(prob_file) == 1) {
+        grups.plots::load_svmop_probs(prob_file[1])
+      } else {
+        progressr::withProgressShiny(message = prog_msg, value = 0, {
+          progressor <- progressr::progressor(along = seq_along(sim_files$path))
+          grups.plots::get_svmop_probs(
+            load_results_file(),
+            sim_files,
+            progressor = progressor,
+            threads = threads
+          )
+        })
+      }
     )
 
     output$SVM_results_df <- DT::renderDataTable({
@@ -379,11 +488,15 @@ app <- function(
       DT::datatable(
         probs,
         style   = "bootstrap5",
-        extensions = "Buttons", #####
+        extensions = "Buttons",
         options = list(
+          pageLength = 10,
+          lengthMenu = list(
+            c(10, 25, 50 , 100, -1),
+            c("10", "25", "50", "100", "All")
+          ),
           ordering = TRUE,
           scrollX = FALSE,
-          ##################
           autoWidth = TRUE,
           searching = TRUE,
           paging = TRUE,
@@ -447,39 +560,37 @@ app <- function(
     output$kinship_matrix_order <- shiny::renderUI({
       shinyjqui::orderInput(
         inputId = "kinship_matrix_ordered_labels",
-        label = "Re-order (drag items to change)",
-        items = levels(load_sims_dataframe()$label),
-        width = "100px"
+        label = "Re-order labels (click and drag to change)",
+        items = levels(load_sims_dataframe()$label)
       )
     })
 
 
     # ---- 2a. Render pairwise difference barplot.
-    output$pwd_barplot <- plotly::renderPlotly(
+    output$pwd_barplot <- plotly::renderPlotly({
+      options(warn = -1)
       grups.plots::plot_pairwise_diff(
         data                  = load_pairwise_dataframe(),
         hide_self_comparisons = input$hide_self_comparisons,
         norm_method           = input$norm_method,
         norm_metric           = input$norm_metric,
-      )
+      )}
     )
 
     # ---- 2b.Render kinship matrix
     shiny::observeEvent(input$dimension, {
+      options(warn = -1)
       output$kinship_matrix <- plotly::renderPlotly(
         grups.plots::plot_kinship_matrix(
           kinship_matrix = grups.plots::get_kinship_matrix(
             load_results_file(),
             sample_regex
           ),
-          #dimensions = input$dimension,
-	  dimensions = c(600, 600),
+          dimensions = input$dimension,
           order      = input$kinship_matrix_ordered_labels
         )
       )
     })
-
-    #kinship_matrix_ordered_labels
 
     # ---- 2c. Render pairwise dataframe
     output$pwd_dataframe <- DT::renderDataTable(

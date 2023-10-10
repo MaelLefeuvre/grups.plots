@@ -11,6 +11,7 @@
 #' @param ... Additional catmaply::catmaply() arguments.
 #' @return a Plotted kinship matrix
 plot_kinship_matrix <- function(kinship_matrix, dimensions, order, color_palette = NULL, ...) {
+
   plot_title   <- "<b>Kinship matrix</b>"
   legend_title <- "<b>Relationship</b>"
 
@@ -33,6 +34,10 @@ plot_kinship_matrix <- function(kinship_matrix, dimensions, order, color_palette
   kinship_matrix$x_order <- as.numeric(factor(kinship_matrix$Left_ind, levels = unique(kinship_matrix$Left_ind)))
   kinship_matrix$y_order <- as.numeric(factor(kinship_matrix$Right_ind, levels = unique(kinship_matrix$Left_ind)))
 
+  # Size of the kinship matrix is the minimum between
+  # the width and the height of the window.
+  # Offset by the approx. size of the banner.
+  plot_size <- -100 + as.numeric(min(dimensions))
 
   if (is.null(color_palette)) {
     color_palette <- viridis::viridis_pal(
@@ -45,12 +50,12 @@ plot_kinship_matrix <- function(kinship_matrix, dimensions, order, color_palette
   legendfont      <- list(size = 16)
   legendtitlefont <- list(size = 20)
 
-
   catmaply::catmaply(
-    kinship_matrix,
+    df             = kinship_matrix,
     x              = Left_ind,
     x_tickangle    = 60,
-    x_order = x_order, y_order=y_order,
+    x_order        = x_order,
+    y_order        = y_order,
     y              = Right_ind,
     y_tickangle    = 20,
     z              = rel,
@@ -65,8 +70,8 @@ plot_kinship_matrix <- function(kinship_matrix, dimensions, order, color_palette
   ) %>% plotly::layout(
     title    = list(text = plot_title),
     autosize = TRUE,
-    width    = 1.3 * as.numeric(dimensions[2]),
-    height   = 1.3 * as.numeric(dimensions[2]),
+    width    = plot_size,
+    height   = plot_size,
     xaxis    = list(
       fixedrange = FALSE,
       autorange  = TRUE,

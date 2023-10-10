@@ -38,10 +38,7 @@ plot_pairwise_diff <- function(
   }
 
   # Plot
-  fig <- plotly::plot_ly(type    = "bar",
-                  data    = plot_data,
-                  color   = ~Rel
-  )
+  fig <- plotly::plot_ly(type = "bar", data = plot_data, color = ~Rel)
 
   # We use a for loop to add individual traces because plotly's error bar
   # display is broken when using data factoring...
@@ -67,22 +64,23 @@ plot_pairwise_diff <- function(
   }
 
   fig %>% plotly::layout(
-    title       = list(text = "Raw average genetic distances.",
-                       y    = 0.99,
-                       yref = "paper"
-                      ),
+    title       = list(
+      text = "Raw average genetic distances.",
+      y    = 0.99,
+      yref = "paper"
+    ),
     yaxis       = list(title = "Mean genetic distance"),
     xaxis       = list(title = "Pairs"),
-    legend      = list(title       = list(text = "<b>Relationship</b>"),
-                       orientation = "h",
-                       y           = -0.2,
-                       yref        = "paper"
-                      ),
+    legend      = list(
+      title       = list(text = "<b>Relationship</b>"),
+      orientation = "h",
+      y           = -0.2,
+      yref        = "paper"
+    ),
     shapes      = plot_shapes,
     annotations = plot_annotations,
     margin      = list(r = 60)
-  ) %>%
-  plotly::config(
+  ) %>% plotly::config(
     editable             = TRUE,
     displaylogo          = FALSE,
     scrollZoom           = TRUE,

@@ -10,7 +10,7 @@ Description: grups.plots is a companion R package providing with various
 License: GPL-3
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.0
+RoxygenNote: 7.2.3
 Imports:
   plotly,
   shiny,
@@ -28,6 +28,8 @@ Imports:
   magrittr,
   RColorBrewer,
   bslib,
+  shinyBS,
+  prompter,
   progressr,
   future.apply,
   future

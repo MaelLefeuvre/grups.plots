@@ -4,7 +4,6 @@
 #' @importFrom reshape2 melt
 #' @param matrix matrix of bhattacharya coefficients between distributions.
 plot_or_confidence <- function(or_matrix, predictor = NULL) {
-
   odds <- or_matrix[, predictor]
   odds <- odds[!(names(odds) %in% predictor)] # remove auto-comparison
   odds <- odds[order(abs(odds))]  # sort according to increasing values of ORs
