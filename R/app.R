@@ -12,9 +12,10 @@
 app <- function(
   ui,
   server,
-  data_dir     = "./grups_output",
-  sample_regex = "[A-Za-z0-9]+(?:[-0-9]+){0,1}",
-  threads      = 1,
+  data_dir            = "./grups_output",
+  sample_regex        = "[A-Za-z0-9]+(?:[-0-9]+){0,1}",
+  threads             = 1,
+  recompute_svm_probs = TRUE,
   ...
 ) {
 
@@ -362,8 +363,8 @@ app <- function(
           shiny::sidebarLayout(
             shiny::sidebarPanel(
               shiny::selectInput("sim_pair",
-                "Pair name",
-                rownames(sim_files)
+                label   = "Pair name",
+                choices = rownames(sim_files)
               ),
               shiny::uiOutput("simulation_labels_checkboxgroup") %>%
                 shinycssloaders::withSpinner(),
@@ -432,21 +433,10 @@ app <- function(
         shiny::verbatimTextOutput("config_file") %>%
           shinycssloaders::withSpinner()
       ),
-
-
-      # ---- Tooltips
-      #shinyBS::bsTooltip(id = "norm_request", title = "This is an input",
-      #      placement = "right", trigger = "hover")
-    
     )
-
   )
 
   server <- function(input, output, session) {
-
-    # ---- Add tooltips
-    shinyBS::addPopover(session, id = "norm_request", title= "Example toolTip", content="hello", trigger = "hover")
-
     # 0 ---- Update block slider inputs
     shiny::observe({
       max_blockstep_value <- input$block_width - 1
@@ -467,10 +457,20 @@ app <- function(
 
     # 0 ---- Fit SVMOPs and compute probabilities.
     prog_msg <-  "Fitting SVM against simulations. This may take a while..."
-    load_svm_probs <- shiny::reactive(
-      if (length(prob_file) == 1) {
+    load_svm_probs <- shiny::reactive({
+      shiny::validate(shiny::need(
+        length(prob_file) > 0 || recompute_svm_probs,
+        stringr::str_squish("\
+          Cannot find any '.probs' file within the directory. You may \
+          recompute these probabilities within grups.plots, using the \
+          'e1071' package, by running the app with \
+          'recompute_svm_probs = TRUE'"
+        )
+      ))
+
+      if (length(prob_file) == 1 && !recompute_svm_probs) {
         grups.plots::load_svmop_probs(prob_file[1])
-      } else {
+      } else if (recompute_svm_probs) {
         progressr::withProgressShiny(message = prog_msg, value = 0, {
           progressor <- progressr::progressor(along = seq_along(sim_files$path))
           grups.plots::get_svmop_probs(
@@ -481,7 +481,7 @@ app <- function(
           )
         })
       }
-    )
+  })
 
     output$SVM_results_df <- DT::renderDataTable({
       probs <- load_svm_probs()
@@ -510,12 +510,15 @@ app <- function(
               list(
                 extend = "collection",
                 className = 'btn-xs btn-warning dropdown-toggle text-primary',
-                buttons = list(list(extend="csv", className="btn-xs"), "excel", "pdf"),
+                buttons = list(
+                  list(extend = "csv", className = "btn-xs"),
+                  "excel",
+                  "pdf"
+                ),
                 text = "Download"
               )
           )
         ),
-        #class   = "table-condensed",
         filter  = "top",
       ) %>% DT::formatRound(
         columns = colnames(probs)[3:length(colnames(probs))],
@@ -605,13 +608,17 @@ app <- function(
     )
 
     # ---- 3a. Load / Update block dataframe
-    load_block_dataframe <- shiny::reactive(
+    load_block_dataframe <- shiny::reactive({
+      shiny::validate(shiny::need(
+        NROW(blk_files) > 0,
+        "Failed to discover any '.blk' file. Is the 'blocks' directory missing?"
+      ))
       grups.plots::load_blockfile(
         path  = blk_files[input$block_pair, ],
         width = input$block_width,
         step  = input$block_step
       )
-    )
+    })
 
     # ---- 3b. Output chromosome subset checkbox group
     output$chromosome_subset_checkboxgroup <- shiny::renderUI({
@@ -632,26 +639,6 @@ app <- function(
       )
     })
 
-    ## WIP: Updates traces without loading up the entire plotly widget.
-    ## Ugly, finicky, and most likely error prone code at the moment.
-    #shiny::observeEvent(input$block_width, {
-    #  plotly::plotlyProxy("block_scatterplot", session) %>%
-    #  plotly::plotlyProxyInvoke("addTraces",
-    #    lapply(1:22, FUN = function(x) {
-    #      data=load_block_dataframe()
-    #      list(x = data[which(data$chr == x),]$start,
-    #           y = data[which(data$chr == x),]$avg_pwd,
-    #           color = ~as.factor(x),
-    #           colors = RColorBrewer::brewer.pal(n=22, "Set2"),
-    #           name = x,
-    #           group = as.factor(x),
-    #           type = 'scatter',
-    #           mode = 'lines+markers'
-    #      )
-    #    })
-    #  ) %>%
-    #  plotly::plotlyProxyInvoke("deleteTraces", as.integer(0:21))
-    #})
     # ---- 3d. Filter out chromosome which were not requested by the user.
     shiny::observeEvent(input$chromosome_labels, {
       chr_to_hide <- unique(
@@ -680,11 +667,12 @@ app <- function(
 
     # ---- 3e. Reset user-selected chromosome if he used select/deselect All.
     shiny::observeEvent(input$chromosome_labels_select, {
+      chromosomes <- levels(as.factor(load_block_dataframe()$chr))
       shiny::updateCheckboxGroupInput(
         session  = session,
         inputId  = "chromosome_labels",
-        choices  = levels(as.factor(load_block_dataframe()$chr)),
-        selected = levels(as.factor(load_block_dataframe()$chr))
+        choices  = chromosomes,
+        selected = chromosomes
       )
     })
     shiny::observeEvent(input$chromosome_labels_deselect, {
@@ -702,11 +690,16 @@ app <- function(
     )
 
     # ---- 4a. Load / Update simulations dataframe
-    load_sims_dataframe <- shiny::reactive(
+    load_sims_dataframe <- shiny::reactive({
+      shiny::validate(shiny::need(
+        !is.null(sim_files[input$sim_pair, ]),
+        "[Error]: Directory does not appear to contain any '.sims' \
+         file for this pairwise comparison"
+      ))
       grups.plots::load_simfile(
         path = sim_files[input$sim_pair, ]
       )
-    )
+    })
 
     # ---- 4b. Output simulation labels checkbox group.
     output$simulation_labels_checkboxgroup <- shiny::renderUI({
@@ -753,11 +746,10 @@ app <- function(
       load_sims_dataframe()
     )
 
-    # ---- Test
-
+    # ---- Load svm probabilities
     shiny::observeEvent(input$sim_pair, {
-      probs <- load_svm_probs()
-      output$assigned_svm_probabilities <- DT::renderDataTable(
+      output$assigned_svm_probabilities <- DT::renderDataTable({
+        probs <- load_svm_probs()
         DT::datatable(
           probs[which(probs$Pair_name == input$sim_pair), -1],
           style    = "bootstrap5",
@@ -772,7 +764,7 @@ app <- function(
           columns = colnames(probs)[3:length(colnames(probs))],
           digits = 5
         )
-      )
+      })
     })
     # ---- 4h. Render KS normality test
     output$ks_normality_test <- DT::renderDataTable(
