@@ -1,6 +1,20 @@
 
 
+#' Generate a pair-specific matrix of Odds Ratios between every
+#' pedigree comparisons distribution.
 #' @export
+#' @param sims_data (dataframe) a pair-specific '.sims' file, containing
+#'        raw simulation results. This will most likely be the output of
+#'        grups.plots::load_simfile()
+#' @param observed_results (dataframe) a '.results' dataframe containing the
+#'        simulation results of the 'pedigree-sims' module of grups-rs. This
+#'        will most likely be the output of grups.plots::load_res_file().
+#' @param labels_to_keep (string) vector of labels specifying which pedigree
+#'        comparisons labels should be kept within the matrix.
+#' @param pair (string) Specify which pairiwse comparison label should be
+#'        targeted to generate the matrix.
+#' @return a n*n matrix of Log(Odds ratios), where each column and row
+#'         corresponds to a specific pedigree comparison label.
 get_odds_matrix <- function(sims_data, observed_results, pair, labels_to_keep) {
   labels_relationships <- levels(sims_data$label)
 
@@ -41,20 +55,6 @@ get_odds_matrix <- function(sims_data, observed_results, pair, labels_to_keep) {
                                    (obs_prob[[rel2]] / (1 - obs_prob[[rel2]]))
     })
   })
-
-  #//best_odds <- obs_prob[which(min(obs_dist_z) == obs_dist_z)] /
-  #//            (1 - obs_prob[which(min(obs_dist_z) == obs_dist_z)])
-  #//for (t in seq_along(labels_relationships)){
-  #//  if (t != which(min(obs_dist_z) == obs_dist_z)) {
-  #//    these_odds <- obs_prob[t] / (1 - obs_prob[t])
-  #//    cat(paste(
-  #//      labels_relationships[t],
-  #//      best_odds / these_odds,
-  #//      "\n",
-  #//      sep = "\t"
-  #//    ))
-  #//  }
-  #//}
 
   # Filter-out unwanted relationships
   or_matrix <- or_matrix[which(rownames(or_matrix) %in% labels_to_keep), ]

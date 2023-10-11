@@ -1,4 +1,5 @@
-#' Main shiny dashboard application
+#' Main grups.plots shiny dashboard application
+#' @export
 #' @import shiny
 #' @import plotly
 #' @import stringr
@@ -8,10 +9,17 @@
 #' @import prompter
 #' @import progressr
 #' @importFrom dplyr %>%
-#' @export
+#' @param data_dir (string) Path to a directory containing the results of a
+#'        GRUPS-rs pedigree-sims kinship analysis.
+#' @param sample_regex Specify the regular expression used to parse sample
+#'        names from the 'Pair_Name' column (PCRE).
+#' @param threads Specify additional worker threads to run this application
+#' @param recompute_svm_probs Specify whether grups.plots should recompute
+#'        SVM probabilities, using the 'e1071' package.
+#' @param
+#' @param ... additional arguments for shiny::serverApp
+#' @return A shiny::shinyApp() object
 app <- function(
-  ui,
-  server,
   data_dir            = "./grups_output",
   sample_regex        = "[A-Za-z0-9]+(?:[-0-9]+){0,1}",
   threads             = 1,
@@ -19,17 +27,26 @@ app <- function(
   ...
 ) {
 
-
-
   tooltips <- grups.plots::tooltips()
 
   progressr::handlers(global = TRUE)
 
   # ----- Format a file pair regular expression
   pair_regex <- paste0("(?<=-)(", sample_regex, "-", sample_regex, ")")
-
   # ---- 0a. Configure loading spinner animation
   options(spinner.type = 8, spinner.color = "#0dc5c1")
+
+  # ---- Default error function when failing to find rownames
+  extract_pair_names <- function(cond) {
+    msg <- base::paste0(
+      "Failed to retrieve some files using the following regular expression: ",
+      "'", pair_regex, "'\n\n",
+      "This may be due to an invalid sample_regex, given your sample names. ",
+      "Try running grups.plots::app() with an alternate sample_regex.\n\n",
+      "Original error message:\n", cond
+    )
+    stop(msg)
+  }
 
   # ---- 1. Search for .result file(s)
   res_files <- list.files(
@@ -60,13 +77,16 @@ app <- function(
   )
 
   # ---- 3b. Extract block pair names, parse all that data into a df. [B FUNC]
-  blk_files <- data.frame(
-    path      = blk_files,
-    row.names = stringr::str_extract(  # Extract pair names
-      blk_files,
-      paste0(pair_regex, "(?=.blk$)")
-    ),
-    stringsAsFactors = FALSE
+  blk_files <- tryCatch({
+      data.frame(
+        path      = blk_files,
+        row.names = stringr::str_extract(  # Extract pair names
+          blk_files,
+          paste0(pair_regex, "(?=.blk$)")
+        ),
+        stringsAsFactors = FALSE
+      )
+    }, error = extract_pair_names
   )
 
   # ---- 4a. Search for simulation files                              [A FUNC]
@@ -77,13 +97,16 @@ app <- function(
   )
 
   # ---- 4b. Extract simulations, pair names, parse them into a df. [B FUNC]
-  sim_files <- data.frame(
-    path = sim_files,
-    row.names = stringr::str_extract( # Extract pair names
-      sim_files,
-      paste0(pair_regex, "(?=.sims$)")
-    ),
-    stringsAsFactors = FALSE
+  sim_files <- tryCatch({
+      data.frame(
+        path = sim_files,
+        row.names = stringr::str_extract( # Extract pair names
+          sim_files,
+          paste0(pair_regex, "(?=.sims$)")
+        ),
+        stringsAsFactors = FALSE
+      )
+    }, error = extract_pair_names
   )
 
   # ---- 5a. Search for .yaml config files
@@ -474,10 +497,10 @@ app <- function(
         progressr::withProgressShiny(message = prog_msg, value = 0, {
           progressor <- progressr::progressor(along = seq_along(sim_files$path))
           grups.plots::get_svmop_probs(
-            load_results_file(),
-            sim_files,
-            progressor = progressor,
-            threads = threads
+            results_file = load_results_file(),
+            sim_files    = sim_files,
+            progressor   = progressor,
+            threads      = threads
           )
         })
       }
@@ -585,9 +608,14 @@ app <- function(
       options(warn = -1)
       output$kinship_matrix <- plotly::renderPlotly(
         grups.plots::plot_kinship_matrix(
-          kinship_matrix = grups.plots::get_kinship_matrix(
-            load_results_file(),
-            sample_regex
+          kinship_matrix = tryCatch(
+            {
+              grups.plots::get_kinship_matrix(
+                load_results_file(),
+                sample_regex
+              )
+            },
+            error = extract_pair_names
           ),
           dimensions = input$dimension,
           order      = input$kinship_matrix_ordered_labels

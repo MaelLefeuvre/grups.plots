@@ -1,8 +1,8 @@
-#' Simple horizontal line plotly
+#' (private) Generate a simple horizontal line in plotly
 #' @export
-#' @param y vertical coordinate of the horizontal line
-#' @param color color of the horizontal line.
-#' @return plotly list type line
+#' @param y (numeric) vertical coordinate of the horizontal line
+#' @param color (string) color of the horizontal line.
+#' @return (list) a list defining a simple horizontal line for plotly
 hline <- function(y, color = "red") {
   list(
     type = "line",

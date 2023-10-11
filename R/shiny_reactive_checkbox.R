@@ -1,8 +1,9 @@
+#' (private) generate a reactive Shiny UI checkbox
 #' @export
 #' @import shiny
-#' @param values vector of checkbox elements.
-#' @param title  title of the div / section.
-#' @param input_id html/css id
+#' @param values [string] vector of checkbox elements.
+#' @param title  (string) title of the div / section.
+#' @param input_id shiny input id of the target shiny html/css.
 #' @param ncol number of display columns.
 #' @return list containing shiny css style, header, and checkboxgroupinput.
 shiny_reactive_checkbox <- function(values, title, input_id, ncol = 2) {

@@ -1,4 +1,5 @@
-#' Simple annotation for MS values of PWD plot.
+#' (private) Simple plotly annotation to plot the MS values
+#' within the Observed pairwise mismatch rate plot.
 #' @export
 #' @param label label of the annotation
 #' @param y coordinate of the text annotation

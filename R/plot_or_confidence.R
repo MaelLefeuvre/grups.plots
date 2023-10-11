@@ -1,8 +1,12 @@
+#' Plot the output of grups.plots::get_odds_matrix() as a scatter plot,
+#' highlighting the odds of the most likely relationship vs. other odds
 #' @export
 #' @import plotly
 #' @importFrom dplyr %>%
 #' @importFrom reshape2 melt
-#' @param matrix matrix of bhattacharya coefficients between distributions.
+#' @param or_matrix matrix of odds_ratio between distributions.
+#' @param predictor label of the most likely relationship
+#' @return a plotly scatter plot
 plot_or_confidence <- function(or_matrix, predictor = NULL) {
   odds <- or_matrix[, predictor]
   odds <- odds[!(names(odds) %in% predictor)] # remove auto-comparison

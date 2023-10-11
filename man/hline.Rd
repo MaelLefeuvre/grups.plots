@@ -2,18 +2,18 @@
 % Please edit documentation in R/hline.R
 \name{hline}
 \alias{hline}
-\title{Simple horizontal line plotly}
+\title{(private) Generate a simple horizontal line in plotly}
 \usage{
 hline(y, color = "red")
 }
 \arguments{
-\item{y}{vertical coordinate of the horizontal line}
+\item{y}{(numeric) vertical coordinate of the horizontal line}
 
-\item{color}{color of the horizontal line.}
+\item{color}{(string) color of the horizontal line.}
 }
 \value{
-plotly list type line
+(list) a list defining a simple horizontal line for plotly
 }
 \description{
-Simple horizontal line plotly
+(private) Generate a simple horizontal line in plotly
 }

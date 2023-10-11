@@ -1,8 +1,23 @@
+#' Plot the results of 'grups.plots::get_bc_matrix()'
 #' @export
 #' @import plotly
 #' @importFrom dplyr %>%
 #' @importFrom reshape2 melt
-#' @param matrix matrix of bhattacharya coefs between sim distributions.
+#' @param matrix (matrix) matrix of bhattacharya coefs between sim
+#'        distributions.
+#' @param pair (string) Label of the targeted pairwise comparison
+#' @param plot_title (string) Title of the plot
+#' @param marker_text (string) Add a prefix text to every cell within the
+#'        plotted matrix
+#' @param cutoff_values [numeric] a vector of values used to define
+#'        significance cutoffs.
+#' @param cutoff labels [string] a vector of strings used to define
+#'        each cutoff value
+#' @param cutoff_colors [string] a vector of colors used to define
+#'        every cutoff value
+#' @param right_align (bool) align cutoff values to the right
+#' @param absolute_values (bool) plot raw odds ratios as absolute values.
+#' @return a plotly plot
 plot_bc_matrix <- function(
   bc_matrix,
   pair,

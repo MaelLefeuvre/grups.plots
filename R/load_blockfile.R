@@ -1,9 +1,12 @@
+#' Load a pair-specific '.blk' file into a simple dataframe.
 #' @export
 #' @importFrom utils read.table
 #' @import zoo
 #' @importFrom zoo rollapply
-#' @param path path leading to a GRUPS .blk results file
-#' @return block dataframe with columns "chr" "start" "end" "overlap" "pwd"
+#' @param path path leading to a GRUPS pair-specific '.blk' results file
+#' @param width The desired which of every window (in Mbases)
+#' @param step The desired sliding step between every window (in Mbases)
+#' @return a dataframe with columns "chr" "start" "end" "overlap" "pwd"
 load_blockfile <- function(path, width, step = 1) {
   data <- read.table(
     path,

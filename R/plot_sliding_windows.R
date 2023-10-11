@@ -1,11 +1,13 @@
+#' Generate a scatter plot of per-chromosome pairwise mismatch rates
+#' within sliding windows, for a specific pairwise comparison.
 #' @export
 #' @import plotly
 #' @import RColorBrewer
 #' @importFrom magrittr %>%
-#' @param block_dataframe dataframe of block jackknife information.
-#' @param pair Pairwise comparison identifier, or label.
-#' @param subset string or vector of chromosomes to subset.
-#' @return plotly scatterplot
+#' @param block_dataframe dataframe of pair-specific '.blk' file. Use the
+#'        output of grups.plots::load_blockfile()
+#' @param pair label of the targeted pairwise comparison.
+#' @return A plotly scatterplot of per-chromosome windowed mismatch rates.
 plot_sliding_window <- function(block_dataframe, pair) {
 
     # Set color palette, and suppress warnings:

@@ -1,10 +1,16 @@
+#' Compute per-class SVM probabilities of belonging to a given relatedness
+#' for every pairwise comparison, using the 'e1071' R package.
+#' @export
 #' @import e1071
 #' @import future.apply
 #' @import future
-#' @param sim_files a list of '.sim' files for each
-#' @param results_file the main '.result' file of GRUPS
-#' @param progressor optional progressr::progressor to report progress.
-#' @export
+#' @param results_file A'.result' dataframe containing the results of the
+#'        'pedigree-sims' module of GRUPS-rs
+#' @param sim_files a list of '.sims' files. One for every pairwise comparison
+#' @param threads number of additional worker threads
+#' @param progressor optional progressr::progressor to update a progress bar.
+#' @return a dataframe containing SVM probabilities for every pairwise
+#'         comparison.
 get_svmop_probs <- function(
   results_file,
   sim_files,

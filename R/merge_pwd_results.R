@@ -1,3 +1,4 @@
+#' (private) Merge a '.pwd' dataframe with a '.results' dataframe
 #' @export
 #' @param pwd_df a dataframe of raw PWD results (.pwd    file extension)
 #' @param res_df a dataframe of pedsims results (.result file extension)

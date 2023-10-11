@@ -1,4 +1,9 @@
+#' Apply a Kolmogorov-Smirnov test of normality on every simulated
+#' distribution of pedigree comparisons, for a given pair of indivduals.
 #' @export
+#' @param sims_file a pair-specific '.sims' dataframe. Most likely the output
+#'        of grups.plots::load_simfile()
+#' @param alpha alpha risk treshold required to reject H0
 test_normality <- function(sims_file, alpha = 0.05) {
   labels_relationships <- levels(sims_file$label)
 
@@ -8,7 +13,7 @@ test_normality <- function(sims_file, alpha = 0.05) {
   data <- sims_file$avg
   for (rel in labels_relationships) {
     relrows <- which(sims_file$label == rel)
-    kstest[[rel]] <- ks.test(
+    kstest[[rel]] <- stats::ks.test(
       x = data[relrows],
       y = rnorm(
         length(data[relrows]),

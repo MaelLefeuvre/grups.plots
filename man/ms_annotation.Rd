@@ -2,7 +2,8 @@
 % Please edit documentation in R/ms_annotation.R
 \name{ms_annotation}
 \alias{ms_annotation}
-\title{Simple annotation for MS values of PWD plot.}
+\title{(private) Simple plotly annotation to plot the MS values
+within the Observed pairwise mismatch rate plot.}
 \usage{
 ms_annotation(label, y)
 }
@@ -15,5 +16,6 @@ ms_annotation(label, y)
 plotly list annotation
 }
 \description{
-Simple annotation for MS values of PWD plot.
+(private) Simple plotly annotation to plot the MS values
+within the Observed pairwise mismatch rate plot.
 }

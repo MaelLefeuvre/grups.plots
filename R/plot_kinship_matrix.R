@@ -1,3 +1,5 @@
+#' Plot the output of grups.plots::get_kinship_matrix() using the catmaply
+#' package.
 #' @export
 #' @import shiny
 #' @import plotly
@@ -8,8 +10,9 @@
 #' @param kinship_matrix Kinship matrix
 #' @param dimensions Shiny input dimensions. in pixels c(row, height)
 #' @param order Order in which kinship degrees should be arranged.
+#' @param color_palette specify a custom color palette for every kinship order.
 #' @param ... Additional catmaply::catmaply() arguments.
-#' @return a Plotted kinship matrix
+#' @return a plotly kinship matrix
 plot_kinship_matrix <- function(kinship_matrix, dimensions, order, color_palette = NULL, ...) {
 
   plot_title   <- "<b>Kinship matrix</b>"

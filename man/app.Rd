@@ -2,17 +2,33 @@
 % Please edit documentation in R/app.R
 \name{app}
 \alias{app}
-\title{Main shiny dashboard application}
+\title{Main grups.plots shiny dashboard application}
 \usage{
 app(
-  ui,
-  server,
   data_dir = "./grups_output",
   sample_regex = "[A-Za-z0-9]+(?:[-0-9]+){0,1}",
   threads = 1,
+  recompute_svm_probs = TRUE,
   ...
 )
 }
+\arguments{
+\item{data_dir}{(string) Path to a directory containing the results of a
+GRUPS-rs pedigree-sims kinship analysis.}
+
+\item{sample_regex}{Specify the regular expression used to parse sample
+names from the 'Pair_Name' column (PCRE).}
+
+\item{threads}{Specify additional worker threads to run this application}
+
+\item{recompute_svm_probs}{Specify whether grups.plots should recompute
+SVM probabilities, using the 'e1071' package.}
+
+\item{...}{additional arguments for shiny::serverApp}
+}
+\value{
+A shiny::shinyApp() object
+}
 \description{
-Main shiny dashboard application
+Main grups.plots shiny dashboard application
 }

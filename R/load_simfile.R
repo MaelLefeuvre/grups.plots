@@ -1,6 +1,7 @@
+#' Utility wrapper to load a pair-specific '.sims' file into a dataframe
 #' @export
 #' @importFrom utils read.table
-#' @param path path leading to a GRUPS .sims results file
+#' @param path path leading to a GRUPS '.sims' results file
 #' @return dataframe containing simulation results for a given pair.
 load_simfile <- function(path) {
   data           <- read.table(path, sep = "\t", header = FALSE)

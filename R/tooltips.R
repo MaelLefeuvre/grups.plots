@@ -1,5 +1,10 @@
 
+#' (private) Wrapper which outputs a dataframe containing tooltips
+#' for every Shiny widget.
 #' @export
+#' @return a dataframe of one row, where each column corresponds to
+#'         a static shiny inputId, and values correspond to the text
+#'         contents of a tooltip
 tooltips <- function() {
   data.frame(
     norm_request          = "Display normalized values of pairwise mismatch rates on the y-axis.",

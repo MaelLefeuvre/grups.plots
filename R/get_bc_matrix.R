@@ -1,4 +1,13 @@
+#' Generate a pair-specific matrix of Bhattacharya coefficients between every
+#' pedigree comparisons distribution.
 #' @export
+#' @param sims_data (dataframe) a pair-specific '.sims' file, containing
+#'        raw simulation results. This will most likely be the output of
+#'        grups.plots::load_simfile()
+#' @param labels_to_keep (string) vector specifying which pedigree comparisons
+#'        labels should be kept within the matrix.
+#' @return a n*n matrix of Bhattacharya coeffients, where each column and
+#'         row corresponds to a specific pedigree comparison label.
 get_bc_matrix <- function(sims_data, labels_to_keep) {
   labels_relationships <- levels(sims_data$label)
 

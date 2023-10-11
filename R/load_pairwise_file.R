@@ -1,7 +1,24 @@
+#' Import and merge the output '.pwd' and '.result' fils of GRUPS-rs into a
+#' single dataframe.
 #' @export
 #' @importFrom utils read.table
-#' @param path path leading to a GRUPS `.pwd` results file.
-#' @return dataframe
+#' @param path (string) path leading to a GRUPS-rs '.pwd' file.
+#' @param res_data (string) path leading to a GRUPS-rs '.result' file
+#' @param norm_avg_type (string) Specify whether to prioritize the corrected
+#' results of the pedigree-sims module, or the raw results of the
+#' 'pwd-from-stdin' module. Valid values are either "Corr." or "Raw."
+#' @param sample_regex Specify the PCRE regular expression to use to parse
+#'        names from the Pair_name column.
+#' @param min_overlap Specify a minimum overlap threshold to filter out
+#'        comparisons below this value.
+#' @param norm_metric (string) User-defined string specifying which method, or
+#'        subset of comparisons should be used. Valid values are:
+#'        - "Pairwise": use pairwise comparisons
+#'        - "Self"    : use self comparisons
+#'        - "Value"   : use a predefined normalization value
+#' @param norm_value (sting) User input optional set normalization value.
+#'        This is only useful when setting norm_method = "Value"
+#' @return a dataframe containing merged, normalized results.
 load_pairwise_file <- function(
   path,
   res_data,
