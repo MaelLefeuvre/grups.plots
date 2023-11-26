@@ -4,6 +4,7 @@
 #' @import e1071
 #' @import future.apply
 #' @import future
+#' @import progressr
 #' @param results_file A'.result' dataframe containing the results of the
 #'        'pedigree-sims' module of GRUPS-rs
 #' @param sim_files a list of '.sims' files. One for every pairwise comparison
@@ -34,8 +35,6 @@ get_svmop_probs <- function(
     FUN         = function(pair_name) {
       if (!is.null(progressor)) {
         i <<- i + 1
-        msg <- sprintf("Processing [%d/%d]: %s", i, NROW(sim_files), pair_name)
-        print(msg)
         progressor(sprintf("Processing [%d/%d]: %s", i, NROW(sim_files), pair_name))
       }
       svms     <- fit_svms(sim_files[pair_name, ])

@@ -8,6 +8,8 @@
 #' @import shinyBS
 #' @import prompter
 #' @import progressr
+#' @import thematic
+#' @import shinyFeedback
 #' @importFrom dplyr %>%
 #' @param data_dir (string) Path to a directory containing the results of a
 #'        GRUPS-rs pedigree-sims kinship analysis.
@@ -23,7 +25,7 @@ app <- function(
   data_dir            = "./grups_output",
   sample_regex        = "[A-Za-z0-9]+(?:[-0-9]+){0,1}",
   threads             = 1,
-  recompute_svm_probs = TRUE,
+  recompute_svm_probs = FALSE,
   ...
 ) {
 
@@ -173,8 +175,10 @@ app <- function(
     ),
 
 
-    theme = bslib::bs_theme(bootswatch = "darkly", version = 5) %>% 
-      bs_add_rules(".dropdown-item { color: #000000 }"), # --- Force black text color for dropdown items.
+    theme = bslib::bs_theme(bootswatch = "darkly", version = 5) %>%
+      bs_add_rules( # --- Force black text color for dropdown items.
+        ".dropdown-item { color: #000000 }"
+      ),
     shiny::navbarPage("GRUPS-plots",
       # ---- 1. Render summary table.
       shiny::tabPanel("Summary",
@@ -451,12 +455,61 @@ app <- function(
           shinycssloaders::withSpinner()
       ),
 
+      # ---- Stats
+      shiny::tabPanel("Stats",
+        shiny::fluidPage(
+          shiny::h5("Deviation calculator"),
+          shiny::p("Estimate the overall deviation between the observed PWD values and pedigree simulation distributions."),
+          shiny::fluidRow(
+            shiny::column(2,
+              shiny::selectInput("stats_samples_select_input_list",
+                label   = "Samples subset",
+                choices = c(
+                  "Pairwise comparisons",
+                  "Self comparisons",
+                  "All comparisons"
+                )
+              )
+            ),
+            shiny::column(2,
+              shiny::radioButtons("stats_simlabel_radio_button",
+                label    = "Use as reference...",
+                choices  = c("A specific distribution", "The closest distribution"),
+                inline    = TRUE
+              )
+            ),
+            shiny::column(2,
+              shiny::conditionalPanel(
+                condition = "input.stats_simlabel_radio_button == 'A specific distribution'",
+                shiny::uiOutput("stats_simlabel_input_list")
+              )
+            ),
+            shiny::column(2,
+              shiny::selectInput("stats_metric_select_input_list",
+               label = "Summary statistic",
+               choices = c("Median", "Mean", "Min", "Max")
+              )
+            ),
+            shiny::column(2,
+              shinyFeedback::loadingButton("stats_compute_deviation_button",
+                label = "Compute",
+                style = "margin-top: 25px;"
+              )
+            ),
+            shiny::column(2,
+              shiny::textOutput("stats_compute_deviation_text_result"),
+              style = "margin-top: 25px;"
+            )
+          )
+        ),
+      ),
+
       # ---- 4. Render yaml configuration file:
       shiny::tabPanel("Configuration",
         shiny::verbatimTextOutput("config_file") %>%
           shinycssloaders::withSpinner()
       ),
-    )
+    ),
   )
 
   server <- function(input, output, session) {
@@ -740,6 +793,14 @@ app <- function(
       )
     })
 
+    output$stats_simlabel_input_list <- shiny::renderUI({
+      sim_labels <- levels(load_sims_dataframe()$label)
+      shiny::selectInput("stats_simlabel_input_list",
+        label    = "Pedigree comparison label",
+        choices  = rev(sim_labels)
+      )
+    })
+
     # ---- 4c. Render simulations violin plot
     output$sims_violinplot <- plotly::renderPlotly({
       grups.plots::plot_pedigree_sims(
@@ -873,6 +934,31 @@ app <- function(
         ]
       )
     )
+
+
+    # ---- Stats
+    stats_compute_deviation_event <- eventReactive(input$stats_compute_deviation_button, {
+      prog_msg <- "Estimating average deviation from pedigree simulations. This may take a while..."
+      progressr::withProgressShiny(message = prog_msg, value = 0, {
+        progressor <- progressr::progressor(along = seq_along(sim_files$path))
+        output <- grups.plots::compute_sim_deviation(
+          sim_files     = sim_files,
+          results_df    = load_results_file(),
+          sample_regex  = sample_regex,
+          label_request = (input$stats_simlabel_radio_button == 'A specific distribution'),
+          metric        = input$stats_metric_select_input_list,
+          subset        = input$stats_samples_select_input_list,
+          simlabel      = input$stats_simlabel_input_list,
+          progressor    = progressor
+        )
+        shinyFeedback::resetLoadingButton("stats_compute_deviation_button")
+        output
+      })
+    })
+
+    output$stats_compute_deviation_text_result <- renderText({
+      stats_compute_deviation_event()
+    })
 
     # ---- 5a. Render yaml config file
     output$config_file <- shiny::renderText(

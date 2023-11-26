@@ -7,7 +7,6 @@
 #'        - "Min"    : use the minimum of all targeted comparisons
 #'        - "Max"    : use the maximum of all targeted comparisons.
 #' @return a summary statistic function corresponding to the provided string.
-#' @export
 get_norm_metric <- function(norm_metric) {
   switch(norm_metric,
     "Median" = median,

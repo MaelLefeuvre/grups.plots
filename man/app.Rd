@@ -8,7 +8,7 @@ app(
   data_dir = "./grups_output",
   sample_regex = "[A-Za-z0-9]+(?:[-0-9]+){0,1}",
   threads = 1,
-  recompute_svm_probs = TRUE,
+  recompute_svm_probs = FALSE,
   ...
 )
 }
