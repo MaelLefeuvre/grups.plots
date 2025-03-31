@@ -1,6 +1,6 @@
 Package: grups.plots
 Title: A Suite of Visualisation Tools for GRUPS-rs
-Version: 0.3.1
+Version: 0.3.2
 Authors@R: 
     person("Maël", "Lefeuvre", , "mael.lefeuvre@mnhn.fr", role = c("aut", "cre"),
            comment = structure("0000-0002-3567-1088", .Names = "ORCID"))

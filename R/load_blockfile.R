@@ -8,11 +8,16 @@
 #' @param step The desired sliding step between every window (in Mbases)
 #' @return a dataframe with columns "chr" "start" "end" "overlap" "pwd"
 load_blockfile <- function(path, width, step = 1) {
+  # -- Check if header:
+  expected_header <- c("chr", "start", "end", "overlap", "pwd")
+  has_header <- all(
+    gsub(" ", "", read.table(path, sep = "\t", nrow = 1)) == expected_header
+  )
   data <- read.table(
     path,
     sep       = "\t",
-    header    = FALSE,
-    col.names = c("chr", "start", "end", "overlap", "pwd")
+    header    = has_header,
+    col.names = expected_header
   )
 
   do.call("rbind",

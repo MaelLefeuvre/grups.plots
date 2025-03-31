@@ -4,8 +4,8 @@
 #' @param path path leading to a GRUPS '.sims' results file
 #' @return dataframe containing simulation results for a given pair.
 load_simfile <- function(path) {
-  data           <- read.table(path, sep = "\t", header = FALSE)
-  colnames(data) <- c(
+  # check if header
+  expected_header <- c(
     "replicate",
     "label",
     "parent0",
@@ -16,7 +16,13 @@ load_simfile <- function(path) {
     "overlap",
     "avg"
   )
-
+  has_header <- all(
+    expected_header %in% gsub(" ", "", read.table(path, sep = "\t", nrow = 1))
+  )
+  data           <- read.table(path, sep = "\t", header = has_header)
+  if (!has_header) {
+    colnames(data) <- expected_header
+  }
   # Reorder labels according to distribution average.
   data$label <- factor(data$label)
 
