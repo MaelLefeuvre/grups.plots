@@ -34,4 +34,5 @@ Imports:
   progressr,
   future.apply,
   future,
-  shinyFeedback
+  shinyFeedback,
+  htmlwidgets

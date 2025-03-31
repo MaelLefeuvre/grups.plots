@@ -38,119 +38,19 @@ app <- function(
   # ---- 0a. Configure loading spinner animation
   options(spinner.type = 8, spinner.color = "#0dc5c1")
 
-  # ---- Default error function when failing to find rownames
-  extract_pair_names <- function(cond) {
-    msg <- base::paste0(
-      "Failed to retrieve some files using the following regular expression: ",
-      "'", pair_regex, "'\n\n",
-      "This may be due to an invalid sample_regex, given your sample names. ",
-      "Try running grups.plots::app() with an alternate sample_regex.\n\n",
-      "Original error message:\n", cond
-    )
-    stop(msg)
-  }
+  # ---- 1. Search all required files
+  grups_rs_files <- grups.plots::fetch_grups_rs_files(data_dir, pair_regex)
 
-  # ---- 1. Search for .result file(s)
-  res_files <- list.files(
-    path = data_dir,
-    full.names = TRUE,
-    pattern = "\\.result$"
-  )
+  res_files    <- grups_rs_files[["results"]]
+  prob_file    <- grups_rs_files[["probs"]]
+  pwd_files    <- grups_rs_files[["pwd"]]
+  blk_files    <- grups_rs_files[["blk"]]
+  sim_files    <- grups_rs_files[["sims"]]
+  config_files <- grups_rs_files[["configs"]]
 
-  # ---- Search for .prob file.
-  prob_file <- list.files(
-    path = data_dir,
-    full.names = TRUE,
-    pattern = "\\.probs$"
-  )
-
-  # ---- 2. Search for .pwd file(s)
-  pwd_files <- list.files(
-    path = data_dir,
-    full.names = TRUE,
-    pattern = "\\.pwd$"
-  )
-
-  # ---- 3a. Search for blk_file(s)                                   [A FUNC]
-  blk_files <- list.files(
-    path = paste(data_dir, "blocks", sep = "/"),
-    full.names = TRUE,
-    pattern = "\\.blk$"
-  )
-
-  # ---- 3b. Extract block pair names, parse all that data into a df. [B FUNC]
-  blk_files <- tryCatch({
-      data.frame(
-        path      = blk_files,
-        row.names = stringr::str_extract(  # Extract pair names
-          blk_files,
-          paste0(pair_regex, "(?=.blk$)")
-        ),
-        stringsAsFactors = FALSE
-      )
-    }, error = extract_pair_names
-  )
-
-  # ---- 4a. Search for simulation files                              [A FUNC]
-  sim_files <- list.files(
-    path = paste(data_dir, "simulations", sep = "/"),
-    full.names = TRUE,
-    pattern = "\\.sims$"
-  )
-
-  # ---- 4b. Extract simulations, pair names, parse them into a df. [B FUNC]
-  sim_files <- tryCatch({
-      data.frame(
-        path = sim_files,
-        row.names = stringr::str_extract( # Extract pair names
-          sim_files,
-          paste0(pair_regex, "(?=.sims$)")
-        ),
-        stringsAsFactors = FALSE
-      )
-    }, error = extract_pair_names
-  )
-
-  # ---- 5a. Search for .yaml config files
-  config_files <- list.files(
-    path = data_dir,
-    full.names = TRUE,
-    pattern = "\\.yaml$"
-  )
-
-  # ---- 5b. order them in decreasing order. -> last yaml becomes the first.
-  config_files <- config_files[order(config_files, decreasing = TRUE)]
-
-
-  # ---- Sanity checks
-  shiny::validate(
-    shiny::need(
-      length(pwd_files) == 1,
-      "[ERROR]: Exactly one `.pwd` file must exist within `data_dir`. \
-       Exiting."
-    ),
-
-    shiny::need(
-      length(res_files) == 1,
-      "[ERROR]: Exactly one `.result` file must exist within `data_dir`. \
-       Exiting."
-    ),
-
-    shiny::need(
-      length(prob_file) <= 1,
-      "[ERROR]: Only one `.probs` file must exist within `data_dir`. Exiting."
-    ),
-
-    shiny::need(
-      length(config_files) >= 1,
-      "[ERROR]: At least one `.yaml` configuration file must exist within \
-       `data_dir`. Exiting"
-    )
-  )
 
   thematic::thematic_shiny()
   ui <- shiny::fluidPage(
-
     prompter::use_prompt(),
 
   # ---- Dimensions of the current window
@@ -668,7 +568,7 @@ app <- function(
                 sample_regex
               )
             },
-            error = extract_pair_names
+            error = grups.plots::extract_pair_names
           ),
           dimensions = input$dimension,
           order      = input$kinship_matrix_ordered_labels

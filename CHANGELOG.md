@@ -1,5 +1,6 @@
 # 0.3.2
 ## Features
+* new function `grups.plots::plot_all`, allowing non interactive plotting of grups-rs results
 * Allow importation of headed .blk and .sims files
 * Added Zenodo DOI Badge
 
